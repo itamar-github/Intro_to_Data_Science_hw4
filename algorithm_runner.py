@@ -5,7 +5,7 @@ from numpy import mean
 
 
 class AlgorithmRunner:
-    def __init__(self, name, k=5):
+    def __init__(self, name, k=15):
         if name == 'KNN':
             self.algorithm = KNeighborsClassifier(k)
         elif name == 'Rocchio':
