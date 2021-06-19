@@ -78,11 +78,12 @@ class Data:
         sn.heatmap(corr_matrix, annot=True)
         plt.show()
 
-    def custom_preprocess(self, drop_cat=False, inplace=False, unite_capital=False, flip_salary_index=False,
-                          pivot_cat=False):
+    def custom_preprocess(self, drop_cat=False, drop_cont=False, inplace=False, unite_capital=False,
+                          flip_salary_index=False, pivot_cat=False):
         """
         return a preprocessed data frame only with 'salary' and continuous features
-        :param drop_cat: boolean. if true drop categorical features. otherwise, don't.
+        :param drop_cat: boolean. if true, drop all categorical features. otherwise, don't.
+        :param drop_cont: boolean. if true, drop all continuous features. otherwise, don't.
         :param inplace: boolean. if true set self.data equal to df before return
         :param unite_capital: boolean. if true unite capital gain and capital loss to one column. otherwise, don't
         :param flip_salary_index: boolean. if true, transform salary values: '<=50K' -> 0, '>50K' -> 1. otherwise, do
@@ -103,6 +104,9 @@ class Data:
 
         if drop_cat:
             self.drop_cat_features(df=df)
+
+        if drop_cont:
+            self.drop_cont_features(df=df)
 
         if pivot_cat:
             df = self.pivot_cat_features(df=df)
@@ -179,9 +183,17 @@ class Data:
         :param df: data frame to perform transformation on.
         :return: pd.DataFrame object
         """
-        df.drop(columns=self.categorical_features)
+        df.drop(columns=self.categorical_features, inplace=True)
 
         return df
+
+    def drop_cont_features(self, df):
+        """
+        drop continuous features
+        :param df: data frame to perform transformation on.
+        :return: pd.DataFrame object
+        """
+        df.drop(columns=self.continuous_features, inplace=True)
 
     def pivot_cat_features(self, df):
         """
@@ -198,31 +210,63 @@ class Data:
         self.categorical_features = Data.categorical_features.copy()
         self.continuous_features = Data.continuous_features.copy()
 
-    def cat_feat_corr(self, feature):
+    def cat_feat_conditional_probability(self, feature):
         """
-        calculate "correlation" for categorical features as follows:
+        calculate probability for a sample to have salary >50K given it is of some category:
         - get dummies for the feature
         - for each indicator:
           - sum the number of matching pairs of the feature indicator and salary
           - subtract the number of mismatching pairs
           - divide by number of samples in the category
-        print heat map vector with "correlation" value for each indicator
+        print bar graph of the calculated ratios.
         :param feature: String object. the title of the feature to examine
-        :return: show PNG of correlation vector
+        :return: show PNG of bar plot of conditional probability for a high salary given a sample is part of a category
+        of feature
         """
-        # isolate feature
+        # isolate feature and salary series
         df = self.custom_preprocess(flip_salary_index=True)
-        feature_frame = df[feature, 'salary']
+        feature_frame = df[feature]
+        salary_series = df['salary']
+
+        # pivot the feature series to get dummies
         feature_frame = pd.get_dummies(feature_frame, columns=[feature])
 
-        # find "correlation" for each dummy and store in a dictionary
-        corr_dict = {}
+        # find probability for each dummy and store in a data frame
+        corr_frame = pd.DataFrame(index=list(feature_frame.keys()), columns=['"correlation"'])
         for dummy in feature_frame.keys():
-            if dummy != 'salary':
-                # store multiplied columns in the dummy column.
-                # if there is 1 in both columns the it will stay in the new Series
-                feature_frame[dummy] = (feature_frame[dummy] == feature_frame['salary']) \
-                                       - (feature_frame[dummy] ^ feature_frame['salary'])
-                corr_dict[dummy] = feature_frame[dummy].sum() / len(feature_frame[dummy])
+            # store multiplied columns in the dummy column.
+            # if there is 1 in both columns the it will stay in the new Series
+            pos_corr = (feature_frame[dummy] & salary_series).sum()
+            total_of_dummy = feature_frame[dummy].sum()
+            corr_frame['"correlation"'][dummy] = pos_corr / total_of_dummy
+            print(dummy, total_of_dummy, pos_corr)
 
+        corr_frame['positive'] = corr_frame['"correlation"'] > 0
+        # plot results
+        corr_frame['"correlation"'].plot(kind='barh')
+        plt.show()
 
+    def cat_conditional_probability(self):
+        """
+        plot bar graph of conditional probabilities for a high salary given that a subject is part of some category.
+        :return: show PNG of bar plot of conditional probability for a high salary given a sample is part of a category
+        """
+        # get dummies and isolate salary series
+        df = self.custom_preprocess(flip_salary_index=True, drop_cont=True, pivot_cat=True)
+        salary_series = df['salary']
+        df.drop(columns=['salary'], inplace=True)
+
+        corr_frame = pd.DataFrame(index=list(df.keys()), columns=['P(>50K | is of category: _)'])
+
+        # find probability for each dummy and store in a data frame
+        for dummy in df.keys():
+            # store multiplied columns in the dummy column.
+            # if there is 1 in both columns the it will stay in the new Series
+            pos_corr = (df[dummy] & salary_series).sum()
+            total_of_dummy = df[dummy].sum()
+            corr_frame['P(>50K | is of category: _)'][dummy] = pos_corr / total_of_dummy
+            print(dummy, total_of_dummy, pos_corr)
+
+        # plot results
+        corr_frame['P(>50K | is of category: _)'].plot(kind='barh')
+        plt.show()
