@@ -223,6 +223,9 @@ class Data:
         :return: show PNG of bar plot of conditional probability for a high salary given a sample is part of a category
         of feature
         """
+
+        """bad comments"""
+
         # isolate feature and salary series
         df = self.custom_preprocess(flip_salary_index=True)
         feature_frame = df[feature]
