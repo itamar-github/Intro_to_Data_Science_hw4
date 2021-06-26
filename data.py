@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
-import sklearn as sk
+import sklearn.feature_selection
+import sklearn.model_selection
 import seaborn as sn
 import matplotlib.pyplot as plt
 
@@ -55,6 +56,18 @@ class Data:
         #     max_value = self.data[feature].max()
         #     self.data[feature] = (self.data[feature] - min_value) / (max_value - min_value)
 
+    def sk_preprocess(self):
+        df = self.custom_preprocess(flip_salary_index=True, pivot_cat=True)
+
+        salary_column = df['salary'].copy()
+        selector = sklearn.feature_selection.VarianceThreshold(0.20)
+        df = pd.DataFrame(selector.fit_transform(df))
+        df.append(salary_column)
+
+        print(df.head(30))
+
+        self.data = df
+
     @staticmethod
     def split_to_k_folds(k):
         """
@@ -62,7 +75,7 @@ class Data:
         :param k: number of folds
         :return: sklearn KFold object
         """
-        return sk.model_selection.KFold(n_splits=k, shuffle=True, random_state=10)
+        return sklearn.model_selection.KFold(n_splits=k, shuffle=True, random_state=10)
 
     def head(self):
         print(self.data.head(30))
