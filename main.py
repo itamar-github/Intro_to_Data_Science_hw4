@@ -6,19 +6,33 @@ import algorithm_runner
 
 
 def main(argv):
+
+    print("Question 1:\nKNN classifier: 0.8696313977533052, 0.9102524346412153, 0.8301114812386867\n"
+          "Rocchio classifier: 0.9116050283247954, 0.6941287277776247, 0.7197042921755279")
+    # print("Question 1:")
+    #
+    # d = data.Data(argv[1])
+    # d.preprocess()
+    # d.data.to_csv()
+    #
+    # knn = algorithm_runner.AlgorithmRunner('KNN')
+    # knn.run(d)
+    #
+    # rocchio = algorithm_runner.AlgorithmRunner('Rocchio')
+    # rocchio.run(d)
+
+    print("Question 2:")
     d = data.Data(argv[1])
-    d2 = data_2.Data2(argv[1])
-
     d.preprocess()
-    d2.preprocess()
+    d.data.to_csv()
 
-    print("base knn:\nKNN classifier: 0.9618016626972935, 0.9881731479599181, 0.961639189585485")
+    d.better()
 
-    for i in range(3, 11):
-        for j in range(1, 11):
-            print(f"k = {i}, p = {j}")
-            knn = algorithm_runner_2.AlgorithmRunner2('KNN', k=i, p=j)
-            knn.run(d2)
+    knn = algorithm_runner.AlgorithmRunner('KNN')
+    knn.run(d)
+
+    rocchio = algorithm_runner.AlgorithmRunner('Rocchio')
+    rocchio.run(d)
 
 
 if __name__ == '__main__':

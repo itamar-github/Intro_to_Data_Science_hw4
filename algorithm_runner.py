@@ -21,8 +21,9 @@ class AlgorithmRunner:
         :return: None
         """
         cv = data.split_to_k_folds(folds)
-        results = cross_validate(self.algorithm, data.data, data.data['salary'],
+        results = cross_validate(self.algorithm, data.data.drop(columns='salary'), data.data['salary'].ravel(),
                                  scoring=('precision', 'recall', 'accuracy'), cv=cv)
 
-        print(f"{self.name} classifier: {mean(results['test_precision'])}, {mean(results['test_recall'])},"
+        print(f"{self.name} classifier: {mean(results['test_precision'])},"
+              f" {mean(results['test_recall'])},"
               f" {mean(results['test_accuracy'])}")

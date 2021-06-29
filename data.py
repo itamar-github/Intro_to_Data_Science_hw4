@@ -1,14 +1,11 @@
 import pandas as pd
 import numpy as np
-import sklearn.feature_selection
 import sklearn.model_selection
-from sklearn import preprocessing
-import seaborn as sn
+import sklearn.feature_selection
 import matplotlib.pyplot as plt
 
 
 class Data:
-
     categorical_features = ['workclass', 'education', 'martial-status', 'occupation', 'relationship', 'race',
                             'sex', 'native-country']
     continuous_features = ['age', 'education-num', 'capital-gain', 'capital-loss', 'hours-per-week']
@@ -19,9 +16,8 @@ class Data:
         """
         self.data = None
         self.path = path
-        self.categorical_features = ['workclass', 'education', 'martial-status', 'occupation', 'relationship', 'race',
-                                     'sex', 'native-country']
-        self.continuous_features = ['age', 'education-num', 'capital-gain', 'capital-loss', 'hours-per-week']
+        self.categorical_features = Data.categorical_features.copy()
+        self.continuous_features = Data.continuous_features.copy()
 
     def preprocess(self):
         """
@@ -33,41 +29,30 @@ class Data:
         - normalize continuous features with MinMax normalizer
         :return:
         """
-        self.custom_preprocess(drop_cat=False, inplace=True, unite_capital=False, flip_salary_index=False,
-                               pivot_cat=True)
-        # # read csv file into 'data' data frame
-        # # strip data of leading or tailing whitespaces
-        # self.data = pd.read_csv(self.path, skipinitialspace=True)
-        # # drop "fnlwgt" column
-        # self.data.drop(columns="fnlwgt", inplace=True)
-        # # replace all "?" with None
-        # self.data.replace('?', np.nan, inplace=True)
-        # # filter rows with NaNs
-        # self.data.dropna(inplace=True)
-        #
-        # # transform categorical features into dummies
-        # self.data = pd.get_dummies(self.data, columns=self.categorical_features)
-        #
-        # # transform salary values: '<=50K' -> 1, '>50K' -> 0
-        # self.data['salary'] = self.data['salary'].apply(lambda s: 1 if s == '<=50K' else 0)
-        #
-        # # normalize continuous features via MinMax normalization
-        # for feature in self.continuous_features:
-        #     min_value = self.data[feature].min()
-        #     max_value = self.data[feature].max()
-        #     self.data[feature] = (self.data[feature] - min_value) / (max_value - min_value)
+        # self.custom_preprocess(drop_cat=False, inplace=True, unite_capital=False, flip_salary_index=False,
+        #                        pivot_cat=True)
+        # read csv file into 'data' data frame
+        # strip data of leading or tailing whitespaces
+        self.data = pd.read_csv(self.path, skipinitialspace=True)
+        # drop "fnlwgt" column
+        self.data.drop(columns="fnlwgt", inplace=True)
+        # replace all "?" with None
+        self.data.replace('?', np.nan, inplace=True)
+        # filter rows with NaNs
+        self.data.dropna(inplace=True)
 
-    def sk_preprocess(self):
-        df = self.custom_preprocess(flip_salary_index=True, pivot_cat=True)
+        # transform categorical features into dummies
+        self.data = pd.get_dummies(self.data, columns=self.categorical_features)
 
-        salary_column = df['salary'].copy()
-        selector = sklearn.feature_selection.VarianceThreshold(0.20)
-        df = pd.DataFrame(selector.fit_transform(df))
-        df.append(salary_column)
+        # transform salary values: '<=50K' -> 1, '>50K' -> 0
+        self.data['salary'] = self.data['salary'].apply(lambda s: 1 if s == '<=50K' else 0)
 
-        print(df.head(30))
-
-        self.data = df
+        # normalize continuous features via MinMax normalization
+        for feature in self.continuous_features:
+            min_value = self.data[feature].min(axis=0)
+            max_value = self.data[feature].max(axis=0)
+            diff = max_value - min_value
+            self.data[feature] = (self.data[feature].__sub__(min_value)).divide(diff)
 
     @staticmethod
     def split_to_k_folds(k):
@@ -78,19 +63,11 @@ class Data:
         """
         return sklearn.model_selection.KFold(n_splits=k, shuffle=True, random_state=10)
 
-    def head(self):
-        print(self.data.head(30))
 
-    def cont_corr_matrix(self, unite_capital=True):
-        """
-        print correlation matrix between the continuous features in the dataset
-        :param unite_capital: boolean. if true unite capital change. otherwise don't.
-        :return: show PNG of correlation matrix
-        """
-        cont_df = self.custom_preprocess(unite_capital=unite_capital)
-        corr_matrix = cont_df.corr()
-        sn.heatmap(corr_matrix, annot=True)
-        plt.show()
+    # ------------------------------------------------------------------------------------------------------------------
+
+    def head(self):
+        print(self.data.head(100))
 
     def custom_preprocess(self, drop_cat=False, drop_cont=False, inplace=False, unite_capital=False,
                           flip_salary_index=False, pivot_cat=False):
@@ -143,8 +120,8 @@ class Data:
         # replace all "?" with NaN
         df.replace('?', np.nan, inplace=True)
         # filter rows with NaNs
-        df.dropna(inplace=True)
-
+        df.dropna(axis=0, inplace=True)
+        df.reset_index(drop=True, inplace=True)
         return df
 
     def transform_salary_values(self, df, reverse=False):
@@ -184,12 +161,11 @@ class Data:
         :param df: data frame to perform transformation on.
         :return: pd.DataFrame object
         """
-        scaler = preprocessing.MinMaxScaler()
-
         for feature in self.continuous_features:
-            min_value = df[feature].min()
-            max_value = df[feature].max()
-            df[feature] = (df[feature] - min_value) / (max_value - min_value)
+            min_value = df[feature].min(axis=0)
+            max_value = df[feature].max(axis=0)
+            diff = max_value - min_value
+            df[feature] = (df[feature].__sub__(min_value)).divide(diff)
 
         return df
 
