@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import sklearn.feature_selection
 import sklearn.model_selection
+from sklearn import preprocessing
 import seaborn as sn
 import matplotlib.pyplot as plt
 
@@ -139,7 +140,7 @@ class Data:
         df = pd.read_csv(self.path, skipinitialspace=True)
         # drop "fnlwgt" column
         df.drop(columns="fnlwgt", inplace=True)
-        # replace all "?" with None
+        # replace all "?" with NaN
         df.replace('?', np.nan, inplace=True)
         # filter rows with NaNs
         df.dropna(inplace=True)
@@ -183,6 +184,8 @@ class Data:
         :param df: data frame to perform transformation on.
         :return: pd.DataFrame object
         """
+        scaler = preprocessing.MinMaxScaler()
+
         for feature in self.continuous_features:
             min_value = df[feature].min()
             max_value = df[feature].max()

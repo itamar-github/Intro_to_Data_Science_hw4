@@ -10,9 +10,9 @@ from numpy import mean
 
 
 class AlgorithmRunner2:
-    def __init__(self, name, k=15, metric=DistanceMetric.get_metric('euclidean')):
+    def __init__(self, name, k=15, metric=DistanceMetric.get_metric('euclidean'), p=2):
         if name == 'KNN':
-            self.algorithm = KNeighborsClassifier(k)
+            self.algorithm = KNeighborsClassifier(k, p=p)
         elif name == 'Rocchio':
             self.algorithm = NearestCentroid(metric=metric)
 
