@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import sklearn.model_selection
-import sklearn.feature_selection
+from sklearn.preprocessing import StandardScaler, Normalizer, MinMaxScaler
 import matplotlib.pyplot as plt
 
 
@@ -18,6 +18,7 @@ class Data:
         self.path = path
         self.categorical_features = Data.categorical_features.copy()
         self.continuous_features = Data.continuous_features.copy()
+        self.normalizer = None
 
     def preprocess(self):
         """
@@ -70,7 +71,7 @@ class Data:
         print(self.data.head(100))
 
     def custom_preprocess(self, drop_cat=False, drop_cont=False, inplace=False, unite_capital=False,
-                          flip_salary_index=False, pivot_cat=False):
+                          flip_salary_index=False, pivot_cat=False, norm='l2'):
         """
         return a preprocessed data frame only with 'salary' and continuous features
         :param drop_cat: boolean. if true, drop all categorical features. otherwise, don't.
@@ -91,16 +92,16 @@ class Data:
         if unite_capital:
             self.unite_capital_change(df=df)
 
-        self.normalize_cont_features(df=df)
+        if pivot_cat:
+            df = self.pivot_cat_features(df=df)
+
+        self.set_normalizer(df=df, norm=norm)
 
         if drop_cat:
             self.drop_cat_features(df=df)
 
         if drop_cont:
             self.drop_cont_features(df=df)
-
-        if pivot_cat:
-            df = self.pivot_cat_features(df=df)
 
         if inplace:
             self.data = df
@@ -155,19 +156,20 @@ class Data:
 
         return df
 
-    def normalize_cont_features(self, df):
+    def set_normalizer(self, df, norm='l2'):
         """
         normalize continuous features via MinMax normalization
         :param df: data frame to perform transformation on.
         :return: pd.DataFrame object
         """
-        for feature in self.continuous_features:
-            min_value = df[feature].min(axis=0)
-            max_value = df[feature].max(axis=0)
-            diff = max_value - min_value
-            df[feature] = (df[feature].__sub__(min_value)).divide(diff)
+        if norm in ['l1', 'l2', 'max']:
+            normalizer = Normalizer(norm=norm)
+        elif norm == 'standard':
+            normalizer = StandardScaler()
+        else:
+            normalizer = MinMaxScaler()
 
-        return df
+        self.normalizer = normalizer
 
     def drop_cat_features(self, df):
         """
