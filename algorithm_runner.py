@@ -26,9 +26,9 @@ class AlgorithmRunner:
         results = cross_validate(self.algorithm, data.data.drop(columns='salary'), data.data['salary'].ravel(),
                                  scoring=('precision', 'recall', 'accuracy'), cv=cv)
 
-        print(f"{self.name} classifier: {mean(results['test_precision'])},"
-              f" {mean(results['test_recall'])},"
-              f" {mean(results['test_accuracy'])}")
+        print(f"{self.name} classifier: {round(mean(results['test_precision']), 3)},"
+              f" {round(mean(results['test_recall']), 3)},"
+              f" {round(mean(results['test_accuracy']), 3)}")
 
     def q2_run(self, data, folds=5, num=20):
         """
@@ -42,9 +42,7 @@ class AlgorithmRunner:
         df, sal_series = self.better(data=data, num=num)
         results = cross_validate(self.algorithm, df, sal_series, scoring=('precision', 'recall', 'accuracy'), cv=cv)
 
-        print(f"{self.name} classifier: {round(mean(results['test_precision']), 3)},"
-              f" {round(mean(results['test_recall']), 3)},"
-              f" {round(mean(results['test_accuracy']), 3)}")
+        print(f"{self.name} classifier: {round(mean(results['test_accuracy']), 3)}")
 
     def better(self, data, num):
         """
@@ -56,5 +54,6 @@ class AlgorithmRunner:
         salary_column = data.data['salary'].copy()
         df = data.data.drop(columns='salary')
         selector = sklearn.feature_selection.SelectKBest(k=num)
-        df = data.normalizer.fit_transform(pd.DataFrame(selector.fit_transform(df, y=salary_column)), y=salary_column)
+        df = data.normalizer.fit_transform(pd.DataFrame(selector.fit_transform(df, y=salary_column)).astype(float),
+                                           y=salary_column)
         return df, salary_column
